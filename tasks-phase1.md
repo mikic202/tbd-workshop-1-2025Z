@@ -89,7 +89,7 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 9. Create a BigQuery dataset and an external table using SQL
 
     ORC file was downloaded from:
-    
+
     <https://github.com/apache/orc/blob/main/examples/TestOrcFile.test1.orc>
 
     ```sql
@@ -120,7 +120,24 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 11. Add support for preemptible/spot instances in a Dataproc cluster
 
-    ***place the link to the modified file and inserted terraform code***
+```
+resource "google_dataproc_cluster" "tbd-dataproc-cluster" {
+  #checkov:skip=CKV_GCP_91: "Ensure Dataproc cluster is encrypted with Customer Supplied Encryption Keys (CSEK)"
+  ...
+
+  cluster_config {
+    staging_bucket = google_storage_bucket.dataproc_staging.name
+    temp_bucket    = google_storage_bucket.dataproc_temp.name
+
+    ...
+
+    preemptible_worker_config {
+      num_instances = 0
+    }
+    }
+```
+
+[PLIK](modules/dataproc/main.tf)
 
 12. Triggered Terraform Destroy on Schedule or After PR Merge. Goal: make sure we never forget to clean up resources and burn money.
 
