@@ -116,11 +116,15 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 10. Find and correct the error in spark-job.py
 
-    ***describe the cause and how to find the error***
+    <!-- ***describe the cause and how to find the error*** -->
+    After changing the *DATA_BUCKET* in `spark-job.py` the job runned succesfully.
+
+    ![img.png](doc/screenshots/airflow.png)
+
 
 11. Add support for preemptible/spot instances in a Dataproc cluster
 
-```
+```json
 resource "google_dataproc_cluster" "tbd-dataproc-cluster" {
   #checkov:skip=CKV_GCP_91: "Ensure Dataproc cluster is encrypted with Customer Supplied Encryption Keys (CSEK)"
   ...
@@ -134,7 +138,7 @@ resource "google_dataproc_cluster" "tbd-dataproc-cluster" {
     preemptible_worker_config {
       num_instances = 0
     }
-    }
+}
 ```
 
 [PLIK](modules/dataproc/main.tf)
