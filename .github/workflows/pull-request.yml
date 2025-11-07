@@ -165,19 +165,10 @@ jobs:
                         --format=json \
                         --compare-to=/tmp/infracost-base.json \
                         --out-file=/tmp/infracost-diff.json
-    - name: Check if Infracost baseline exists
-      run: |
-        if [ -f /tmp/infracost-base.json ]; then
-          echo "✅ Baseline file found."
-          ls -lh /tmp/infracost-base.json
-        else
-          echo "❌ Baseline file NOT found."
-          exit 1
-        fi
     - name: Print Infracost diff
       run: |
         echo "Infracost diff:"
-        infracost output --path=/tmp/infracost-diff.json --format=table
+        infracost output --path=/tmp/infracost-base.json --format=table
     - name: Post Infracost comment
       run: |
           infracost comment github --path=/tmp/infracost-diff.json \
