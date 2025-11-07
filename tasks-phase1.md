@@ -31,16 +31,20 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 
     * Graphs:
 
-    ```
+    ```bash
     cd modules/vertex-ai-workbench
     terraform init
     ```
 
-    `terraform graph | dot -Tpng > ../../doc/screenshots/graph_small.png`
+    ```bash
+    terraform graph | dot -Tpng > ../../doc/screenshots/graph_small.png
+    ```
 
     ![img.png](doc/screenshots/vertexai_graph_small.png)
 
-    `terraform graph -type=plan | dot -Tpng >  ../../doc/screenshots/graph.png`
+    ```bash
+    terraform graph -type=plan | dot -Tpng >  ../../doc/screenshots/graph.png
+    ```
 
     ![img.png](doc/screenshots/vertexai_graph.png)
 
@@ -88,7 +92,7 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
     
     <https://github.com/apache/orc/blob/main/examples/TestOrcFile.test1.orc>
 
-    ```
+    ```sql
     CREATE SCHEMA IF NOT EXISTS `tbd-2025z-318407.tbd_dataset`
     OPTIONS (
     location = 'europe-west1'
