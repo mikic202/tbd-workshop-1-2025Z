@@ -7,8 +7,8 @@ resource_usage:
 
   module.data-pipelines.google_storage_bucket.tbd-code-bucket:
     storage_gb: 100
-    monthly_class_a_operations: 40000
-    monthly_class_b_operations: 20000
+    monthly_class_a_operations: 4000000
+    monthly_class_b_operations: 2000000
     monthly_data_retrieval_gb: 100
     monthly_egress_data_transfer_gb:
       same_continent: 5500
