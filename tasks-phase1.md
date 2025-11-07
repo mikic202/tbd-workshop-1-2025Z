@@ -164,12 +164,20 @@ on:
   schedule:
     - cron: "0 20 * * *"
   pull_request:
-    labels:
-      - DESTROY
+    types: [closed]
+    branches:
+      - master
+      - main
 
 permissions: read-all
 jobs:
   destroy-release:
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event.pull_request.merged == true &&
+       github.base_ref == 'main' &&
+       contains(github.event.pull_request.title, '[CLEANUP]'))
+
     runs-on: ubuntu-latest
 
     permissions:
