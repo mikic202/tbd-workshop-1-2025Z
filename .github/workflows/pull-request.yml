@@ -164,10 +164,14 @@ jobs:
         infracost diff --path="." \
                         --format=json \
                         --compare-to=/tmp/infracost-base.json \
-                        --out-file=/tmp/infracost.json
+                        --out-file=/tmp/infracost-diff.json
+    - name: Print Infracost diff
+      run: |
+        echo "Infracost diff:"
+        infracost output --path=/tmp/infracost-diff.json --format=table
     - name: Post Infracost comment
       run: |
-          infracost comment github --path=/tmp/infracost.json \
+          infracost comment github --path=/tmp/infracost-diff.json \
                                    --repo=$GITHUB_REPOSITORY \
                                    --github-token=${{secrets.GITHUB_TOKEN}} \
                                    --pull-request=${{github.event.pull_request.number}} \

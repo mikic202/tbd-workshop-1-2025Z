@@ -37,7 +37,7 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
     ```
 
     `terraform graph | dot -Tpng > ../../doc/screenshots/graph_small.png`
-    
+
     ![img.png](doc/screenshots/vertexai_graph_small.png)
 
     `terraform graph -type=plan | dot -Tpng >  ../../doc/screenshots/graph.png`
@@ -45,19 +45,19 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
     ![img.png](doc/screenshots/vertexai_graph.png)
 
     * Descripiton
-        
+
         The smaller graph shows only nodes with datasources and their relations, dependencies. These are the essencials of the infrastructure objects. Plan graph includes also the variables, providers and other resources as well. Its everything that Terraform uses when planning.
 
         The Vertex-ai-workbench module provides a Google Cloud Vertex AI Workbench Notebook Instance. The module automates the setup of Vertex instance and enables configuration such as project_name, region, network, subnet. This Instance is a managable Jupyter enviroment for data science and machine learning.
 
         Main resources:
-        
+
         1. Google Notebook Instance (`google_notebooks_instance.tbd_notebook`) - managed notebook instance.
 
         2. Google Project Service (`google_project_service.notebooks`) - the service that ensures that the Nootebooks APIs are enabled in the project. It's a prerequisite for creattion of notebook instance.
 
         3. Google Cloud Storage Bucket (`google_storage_bucket.notebook-conf-bucket`and `oogle_storage_bucket_object.post-startup`) - Creation of the GCP Buckets for storing operational data - configuration files, startup scripts, etc.
-        
+
         4. IAM binding (`google_storage_bucket_iam_binding.binding` and `google_project_iam_binding.token_creator_role`) - a authorisation, permission and policy management tool.
 
         5. Google Cloud Data Source (`data.google_project.project`) - retrieval of project metadata.
@@ -66,6 +66,7 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 6. Reach YARN UI
 
    ***place the command you used for setting up the tunnel, the port and the screenshot of YARN UI here***
+
 
 7. Draw an architecture diagram (e.g. in draw.io) that includes:
     1. Description of the components of service accounts
@@ -83,7 +84,18 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 9. Create a BigQuery dataset and an external table using SQL
 
-    ***place the code and output here***
+    ```
+    CREATE SCHEMA IF NOT EXISTS `tbd-2025z-318407.tbd_dataset`
+    OPTIONS (
+    location = 'europe-west1'
+    );
+
+    CREATE EXTERNAL TABLE IF NOT EXISTS `tbd-2025z-318407.tbd_dataset.tab-ext`
+    OPTIONS (
+    format = 'ORC',
+    uris = ['gs://tbd-2025z-318407-data/data/*.orc']
+    );
+    ```
 
     ***why does ORC not require a table schema?***
 
