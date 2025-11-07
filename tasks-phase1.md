@@ -84,6 +84,10 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 9. Create a BigQuery dataset and an external table using SQL
 
+    ORC file was downloaded from:
+    
+    <https://github.com/apache/orc/blob/main/examples/TestOrcFile.test1.orc>
+
     ```
     CREATE SCHEMA IF NOT EXISTS `tbd-2025z-318407.tbd_dataset`
     OPTIONS (
@@ -97,7 +101,14 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
     );
     ```
 
-    ***why does ORC not require a table schema?***
+    Sample query from created table:
+
+    ![img.png](doc/screenshots/bigquery-select.png)
+
+
+    <!-- ***why does ORC not require a table schema?*** -->
+    ORC file type does not require any table schema because it is self-describing. It stores metadata such as column names, data types and structure so reader in bigquery can apply ORC file automatically.
+
 
 10. Find and correct the error in spark-job.py
 
