@@ -17,15 +17,51 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 
     2. Create PR from this branch to **YOUR** master and merge it to make new release.
 
-    ***place the screenshot from GA after succesfull application of release***
+    <!-- ***place the screenshot from GA after succesfull application of release*** -->
 
     ![img.png](doc/screenshots/destroy_start.png)
 
     ![img.png](doc/screenshots/all_finished.png)
 
+
 5. Analyze terraform code. Play with terraform plan, terraform graph to investigate different modules.
 
-    ***describe one selected module and put the output of terraform graph for this module here***
+    <!-- ***describe one selected module and put the output of terraform graph for this module here*** -->
+    We decided to investigate the vertex-ai-workbench module.
+
+    * Graphs:
+
+    ```
+    cd modules/vertex-ai-workbench
+    terraform init
+    ```
+
+    `terraform graph | dot -Tpng > ../../doc/screenshots/graph_small.png`
+    
+    ![img.png](doc/screenshots/vertexai_graph_small.png)
+
+    `terraform graph -type=plan | dot -Tpng >  ../../doc/screenshots/graph.png`
+
+    ![img.png](doc/screenshots/vertexai_graph.png)
+
+    * Descripiton
+        
+        The smaller graph shows only nodes with datasources and their relations, dependencies. These are the essencials of the infrastructure objects. Plan graph includes also the variables, providers and other resources as well. Its everything that Terraform uses when planning.
+
+        The Vertex-ai-workbench module provides a Google Cloud Vertex AI Workbench Notebook Instance. The module automates the setup of Vertex instance and enables configuration such as project_name, region, network, subnet. This Instance is a managable Jupyter enviroment for data science and machine learning.
+
+        Main resources:
+        
+        1. Google Notebook Instance (`google_notebooks_instance.tbd_notebook`) - managed notebook instance.
+
+        2. Google Project Service (`google_project_service.notebooks`) - the service that ensures that the Nootebooks APIs are enabled in the project. It's a prerequisite for creattion of notebook instance.
+
+        3. Google Cloud Storage Bucket (`google_storage_bucket.notebook-conf-bucket`and `oogle_storage_bucket_object.post-startup`) - Creation of the GCP Buckets for storing operational data - configuration files, startup scripts, etc.
+        
+        4. IAM binding (`google_storage_bucket_iam_binding.binding` and `google_project_iam_binding.token_creator_role`) - a authorisation, permission and policy management tool.
+
+        5. Google Cloud Data Source (`data.google_project.project`) - retrieval of project metadata.
+
 
 6. Reach YARN UI
 
