@@ -152,14 +152,16 @@ jobs:
       with:
         ref: '${{ github.event.pull_request.base.ref }}'
     - name: Generate Infracost cost estimate baseline
+      working-directory: cicd_bootstrap
       run: |
         infracost breakdown --path="." \
                             --format=json \
                             --out-file=/tmp/infracost-base.json \
-                            --usage-file=cicd_bootstrap/infracost-usage.yml
+                            --usage-file=infracost-usage.yml
     - name: Checkout PR branch
       uses: actions/checkout@v3
     - name: Generate Infracost diff
+      working-directory: cicd_bootstrap
       run: |
         infracost diff --path="." \
                         --format=json \
