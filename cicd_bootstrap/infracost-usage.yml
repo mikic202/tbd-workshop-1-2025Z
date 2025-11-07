@@ -5,7 +5,7 @@ resource_usage:
     monthly_egress_data_transfer_gb:
       europe_west1: 100
 
-  oogle_storage_bucket.tbd-code-bucket:
+  google_storage_bucket.tbd-code-bucket:
     storage_gb: 100
     monthly_class_a_operations: 40000
     monthly_class_b_operations: 20000
