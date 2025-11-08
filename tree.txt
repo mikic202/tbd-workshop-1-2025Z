@@ -1,0 +1,214 @@
+.
+├── backend.tf
+├── bootstrap
+│   ├── main.tf
+│   ├── output.tf
+│   ├── provider.tf
+│   ├── README.md
+│   ├── terraform.tfstate
+│   └── variables.tf
+├── check_python_env.py
+├── cicd_bootstrap
+│   ├── backend.tf
+│   ├── conf
+│   │   └── github_actions.tfvars
+│   ├── infracost-usage.yml
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── provider.tf
+│   ├── README.md
+│   └── variables.tf
+├── devel
+│   ├── docker
+│   │   └── Dockerfile
+│   ├── docker-compose.yml
+│   └── README.md
+├── doc
+│   ├── figures
+│   │   ├── bootstrap-output.png
+│   │   ├── destroy.png
+│   │   ├── destroy-workflow.png
+│   │   ├── discounts.png
+│   │   ├── fork.png
+│   │   ├── hla.png
+│   │   ├── pyspark.png
+│   │   ├── secrets.png
+│   │   ├── vscode.png
+│   │   ├── workbench.png
+│   │   ├── workflow.png
+│   │   ├── workload-identity.png
+│   │   └── workload_id_federation.png
+│   └── screenshots
+│       ├── all_finished.png
+│       ├── destroy_start.png
+│       ├── tbd-cluster-commands.png
+│       └── tbd-cluster-screen.png
+├── env
+│   ├── backend.tfvars
+│   └── project.tfvars
+├── LICENSE
+├── main.tf
+├── mlops
+│   ├── backend.tf
+│   ├── default-app
+│   │   └── app.yaml
+│   ├── env
+│   │   ├── backend.tfvars
+│   │   └── project.tfvars
+│   ├── main.tf
+│   ├── mlflow
+│   │   ├── docker_image
+│   │   │   ├── main.tf
+│   │   │   ├── outputs.tf
+│   │   │   ├── README.md
+│   │   │   ├── resources
+│   │   │   │   ├── Dockerfile
+│   │   │   │   └── start.sh
+│   │   │   ├── variables.tf
+│   │   │   └── versions.tf
+│   │   └── gcp
+│   │       ├── app_engine
+│   │       │   ├── app.tf
+│   │       │   ├── database.tf
+│   │       │   ├── main.tf
+│   │       │   ├── outputs.tf
+│   │       │   ├── README.md
+│   │       │   ├── storage.tf
+│   │       │   ├── variables.tf
+│   │       │   └── versions.tf
+│   │       └── gcr
+│   │           ├── main.tf
+│   │           ├── outputs.tf
+│   │           ├── README.md
+│   │           ├── variables.tf
+│   │           └── versions.tf
+│   ├── provider.tf
+│   ├── README.md
+│   └── variables.tf
+├── modules
+│   ├── composer
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── data-pipeline
+│   │   ├── main.tf
+│   │   ├── README.md
+│   │   ├── resources
+│   │   │   ├── data-dag.py
+│   │   │   ├── dbt-dag.py
+│   │   │   └── spark-job.py
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── dataproc
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── dbt_docker_image
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── resources
+│   │   │   ├── conf
+│   │   │   │   ├── capacity-scheduler.xml
+│   │   │   │   ├── configuration.xsl
+│   │   │   │   ├── container-executor.cfg
+│   │   │   │   ├── core-site.xml
+│   │   │   │   ├── distcp-default.xml
+│   │   │   │   ├── hadoop-env.sh
+│   │   │   │   ├── hadoop-metrics2.properties
+│   │   │   │   ├── hadoop-policy.xml
+│   │   │   │   ├── hdfs-site.xml
+│   │   │   │   ├── hive-site.xml
+│   │   │   │   ├── log4j.properties
+│   │   │   │   ├── mapred-env.sh
+│   │   │   │   ├── mapred-queues.xml.template
+│   │   │   │   ├── mapred-site.xml
+│   │   │   │   ├── nodes_exclude
+│   │   │   │   ├── nodes_include
+│   │   │   │   ├── ssl-client.xml.example
+│   │   │   │   ├── ssl-server.xml.example
+│   │   │   │   ├── yarn-env.sh
+│   │   │   │   ├── yarn-site.xml
+│   │   │   │   └── yarn-timelineserver.logging.properties
+│   │   │   ├── Dockerfile
+│   │   │   └── profiles.yml
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── gcr
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── jupyter_docker_image
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── resources
+│   │   │   ├── conf
+│   │   │   │   ├── capacity-scheduler.xml
+│   │   │   │   ├── configuration.xsl
+│   │   │   │   ├── container-executor.cfg
+│   │   │   │   ├── core-site.xml
+│   │   │   │   ├── distcp-default.xml
+│   │   │   │   ├── hadoop-env.sh
+│   │   │   │   ├── hadoop-metrics2.properties
+│   │   │   │   ├── hadoop-policy.xml
+│   │   │   │   ├── hdfs-site.xml
+│   │   │   │   ├── hive-site.xml
+│   │   │   │   ├── log4j.properties
+│   │   │   │   ├── mapred-env.sh
+│   │   │   │   ├── mapred-queues.xml.template
+│   │   │   │   ├── mapred-site.xml
+│   │   │   │   ├── nodes_exclude
+│   │   │   │   ├── nodes_include
+│   │   │   │   ├── ssl-client.xml.example
+│   │   │   │   ├── ssl-server.xml.example
+│   │   │   │   ├── yarn-env.sh
+│   │   │   │   ├── yarn-site.xml
+│   │   │   │   └── yarn-timelineserver.logging.properties
+│   │   │   └── Dockerfile
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── metastore
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   ├── vertex-ai-workbench
+│   │   ├── main.tf
+│   │   ├── README.md
+│   │   ├── resources
+│   │   │   └── notebook_post_startup_script.sh
+│   │   ├── variables.tf
+│   │   └── versions.tf
+│   └── vpc
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── README.md
+│       ├── variables.tf
+│       └── versions.tf
+├── notebooks
+│   ├── hello-world-pyspark.ipynb
+│   ├── tpc-di-setup.ipynb
+│   ├── workshop_2_mlops.ipynb
+│   └── workshop_3_spark.ipynb
+├── provider.tf
+├── README.md
+├── README-phase-2a.md
+├── README-phase-2b.md
+├── scenarios
+│   └── ics-intro
+│       └── README.md
+├── tasks-phase1.md
+├── tree.txt
+├── variables.tf
+├── vertexai_graph.png
+└── vertexai_graph_small.png
+
+37 directories, 174 files
