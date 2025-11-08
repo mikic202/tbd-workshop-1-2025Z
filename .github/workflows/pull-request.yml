@@ -1,4 +1,3 @@
----
 name: Tech Tests
 
 # Controls when the workflow will run
@@ -153,28 +152,40 @@ jobs:
         ref: '${{ github.event.pull_request.base.ref }}'
     - name: Generate Infracost cost estimate baseline
       run: |
-        infracost breakdown --usage-file cicd_bootstrap/infracost-usage.yaml \
-                            --path="." \
+        infracost breakdown --path="." \
                             --format=json \
                             --out-file=/tmp/infracost-base.json
+    - name: Print Infracost results
+      run: |
+        echo "Infracost results:"
+        infracost output --path=/tmp/infracost-base.json --format=table
     - name: Checkout PR branch
       uses: actions/checkout@v3
+    - name: Generate Infracost cost estimate new
+      run: |
+        infracost breakdown --path="." \
+                            --usage-file cicd_bootstrap/infracost-usage.yaml \
+                            --format=json \
+                            --out-file=/tmp/infracost-new.json
+    - name: Print Infracost results new
+      run: |
+        echo "Infracost results:"
+        infracost output --path=/tmp/infracost-new.json --format=table
     - name: Generate Infracost diff
       run: |
         infracost diff --path="." \
+                        --usage-file cicd_bootstrap/infracost-usage.yaml \
                         --format=json \
                         --compare-to=/tmp/infracost-base.json \
                         --out-file=/tmp/infracost-diff.json
     - name: Print Infracost diff
       run: |
         echo "Infracost diff:"
-        infracost output --path=/tmp/infracost-base.json --format=table
+        infracost output --path=/tmp/infracost-diff.json --format=table
     - name: Post Infracost comment
       run: |
           infracost comment github --path=/tmp/infracost-diff.json \
                                    --repo=$GITHUB_REPOSITORY \
                                    --github-token=${{secrets.GITHUB_TOKEN}} \
                                    --pull-request=${{github.event.pull_request.number}} \
-                                   --behavior=new \
-                                   --show-skipped
-
+                                   --behavior=new
