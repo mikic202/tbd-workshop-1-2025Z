@@ -164,7 +164,7 @@ jobs:
     - name: Generate Infracost cost estimate new
       run: |
         infracost breakdown --path="." \
-                            --usage-file cicd_bootstrap/infracost-usage.yaml \
+                            --usage-file cicd_bootstrap/infracost-usage.yml \
                             --format=json \
                             --out-file=/tmp/infracost-new.json
     - name: Print Infracost results new
@@ -174,7 +174,7 @@ jobs:
     - name: Generate Infracost diff
       run: |
         infracost diff --path="." \
-                        --usage-file cicd_bootstrap/infracost-usage.yaml \
+                        --usage-file cicd_bootstrap/infracost-usage.yml \
                         --format=json \
                         --compare-to=/tmp/infracost-base.json \
                         --out-file=/tmp/infracost-diff.json
