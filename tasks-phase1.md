@@ -82,9 +82,37 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 For all the resources of type: `google_artifact_registry`, `google_storage_bucket`, `google_service_networking_connection`
 create a sample usage profiles and add it to the Infracost task in CI/CD pipeline. Usage file [example](https://github.com/infracost/infracost/blob/master/infracost-usage-example.yml)
 
-   ***place the expected consumption you entered here***
+```yaml
+version: 0.1
+resource_usage:
+  google_artifact_registry.tbd_registry:
+    storage_gb: 100
+    monthly_egress_data_transfer_gb:
+      europe_west1: 150
 
-   ***place the screenshot from infracost output here***
+  module.data-pipelines.google_storage_bucket.tbd-code-bucket:
+    storage_gb: 200
+    monthly_class_a_operations: 4000000
+    monthly_class_b_operations: 2000000
+    monthly_data_retrieval_gb: 100
+    monthly_egress_data_transfer_gb:
+      same_continent: 5500
+      worldwide: 1250
+      asia: 1500
+      australia: 250
+
+  module.gcp_mlflow_appengine.google_service_networking_connection.private_vpc_connection:
+    monthly_egress_data_transfer_gb:
+      same_region: 350
+      us_or_canada: 100
+      europe: 100
+      asia: 50
+      south_america: 100
+      oceania: 50
+      worldwide: 200
+```
+
+   ![alt text](doc/screenshots/usage_table.png)
 
 9. Create a BigQuery dataset and an external table using SQL
 
@@ -124,7 +152,7 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 11. Add support for preemptible/spot instances in a Dataproc cluster
 
-```json
+```
 resource "google_dataproc_cluster" "tbd-dataproc-cluster" {
   #checkov:skip=CKV_GCP_91: "Ensure Dataproc cluster is encrypted with Customer Supplied Encryption Keys (CSEK)"
   ...
@@ -207,7 +235,6 @@ jobs:
       continue-on-error: false
 ```
 
-
-***paste screenshot/log snippet confirming the auto-destroy ran***
+![alt text](doc/screenshots/auto_destroy.png)
 
 Running auto-destroy helps keeping the servers clean and minimizes the costs for the enterprise.
