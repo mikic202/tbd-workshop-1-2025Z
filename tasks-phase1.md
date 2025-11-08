@@ -124,7 +124,7 @@ create a sample usage profiles and add it to the Infracost task in CI/CD pipelin
 
 11. Add support for preemptible/spot instances in a Dataproc cluster
 
-```json
+```
 resource "google_dataproc_cluster" "tbd-dataproc-cluster" {
   #checkov:skip=CKV_GCP_91: "Ensure Dataproc cluster is encrypted with Customer Supplied Encryption Keys (CSEK)"
   ...
@@ -207,7 +207,6 @@ jobs:
       continue-on-error: false
 ```
 
-
-***paste screenshot/log snippet confirming the auto-destroy ran***
+![alt text](doc/screenshots/auto_destroy.png)
 
 Running auto-destroy helps keeping the servers clean and minimizes the costs for the enterprise.
