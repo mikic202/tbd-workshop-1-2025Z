@@ -70,11 +70,24 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 6. Reach YARN UI
 
    ***place the command you used for setting up the tunnel, the port and the screenshot of YARN UI here***
+  ```bash
+  gcloud compute ssh tbd-cluster-m --project=tbd-2025z-318407 \
+  --zone=europe-west1-d -- -D 8080 -N
+
+  /usr/bin/google-chrome --proxy-server="socks5://localhost:8080" \
+  --user-data-dir="/tmp/tbd-cluster-m" http://tbd-cluster-m:8088
+  ```
+
+  ![img.png](doc/screenshots/tbd-cluster-screen.png)
 
 
 7. Draw an architecture diagram (e.g. in draw.io) that includes:
     1. Description of the components of service accounts
     2. List of buckets for disposal
+    - tbd-2025z-318407-code
+    - tbd-2025z-318407-data
+    - tbd-2025z-318407-dataproc-staging
+    - tbd-2025z-318407-dataproc-temp
 
     ***place your diagram here***
 
