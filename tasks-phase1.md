@@ -69,11 +69,16 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 
 6. Reach YARN UI
 
-   ***place the command you used for setting up the tunnel, the port and the screenshot of YARN UI here***
+   <!-- ***place the command you used for setting up the tunnel, the port and the screenshot of YARN UI here*** -->
+  **PORT:** 8088
+
+  **COMMAND:**
   ```bash
+  # SSH tunnel (local port 8080)
   gcloud compute ssh tbd-cluster-m --project=tbd-2025z-318407 \
   --zone=europe-west1-d -- -D 8080 -N
 
+  # Open Chrome using the SSH proxy connection
   /usr/bin/google-chrome --proxy-server="socks5://localhost:8080" \
   --user-data-dir="/tmp/tbd-cluster-m" http://tbd-cluster-m:8088
   ```
@@ -83,13 +88,30 @@ IMPORTANT ❗ ❗ ❗ Please remember to destroy all the resources after each wo
 
 7. Draw an architecture diagram (e.g. in draw.io) that includes:
     1. Description of the components of service accounts
+    - 83620689809-compute@developer.gserviceaccount.com:
+
+    **Compute Engine default service account** - Used by VM instances to access other Google Cloud services.
+
+    - tbd-2025z-318407-dataproc-sa@tbd-2025z-318407.iam.gserviceaccount.com
+
+    **Dataproc Service Account** - Used by Dataproc clusters to run jobs and access storage and other GCP services.
+
+    - tbd-2025z-318407-data@tbd-2025z-318407.iam.gserviceaccount.com
+
+    **Apache Airflow service account** - Used by Airflow to run workflows that interact with Google Cloud resources.
+
+    - tbd-2025z-318407-lab@tbd-2025z-318407.iam.gserviceaccount.com
+
+    **Terraform service account** - Used by Terraform to create and manage GCP infrastructure.
+    
     2. List of buckets for disposal
     - tbd-2025z-318407-code
     - tbd-2025z-318407-data
     - tbd-2025z-318407-dataproc-staging
     - tbd-2025z-318407-dataproc-temp
 
-    ***place your diagram here***
+    <!-- ***place your diagram here*** -->
+  ![img.png](doc/screenshots/diagram.png)
 
 8. Create a new PR and add costs by entering the expected consumption into Infracost
 For all the resources of type: `google_artifact_registry`, `google_storage_bucket`, `google_service_networking_connection`
