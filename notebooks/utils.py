@@ -20,7 +20,7 @@ SELECT
     device, COUNT(*) AS device_count,
     AVG(latency) AS avg_latency, AVG(error_rate) AS avg_error_rate
 FROM
-    db_table
+    %s
 GROUP BY
     device
 """
@@ -42,7 +42,7 @@ SELECT
         ROWS BETWEEN 100 PRECEDING AND CURRENT ROW
     ) AS rolling_avg_views
 FROM
-    db_table
+    %s
 """
 
 JOIN_QUERY = """
@@ -56,7 +56,7 @@ WITH posts_ranked AS (
             ORDER BY timestamp DESC
         ) AS userpost_history
     FROM
-        db_table
+        %s
 )
 SELECT
     cur.user_id as user_id
@@ -77,6 +77,11 @@ ON
 N_REPEATS = 5
 
 
+### Data tables
+
+DEFAULT_DATA_TABLE_NAME = "db_table"
+
+
 #  -- -- -- -- --  PANDAS -- -- -- -- --
 
 
@@ -94,26 +99,24 @@ def benchmark_polars():
 #  -- -- -- -- --  DUCKDB -- -- -- -- --
 
 
-def benchmark_duckdb():
-    pass
+def benchmark_duckdb_memory(table_location: str, query: str) -> list[float]:
+    peak_memory = memory_usage(
+        (lambda: duckdb.sql(query % f"'{table_location}'").fetchall(), ()),
+        max_usage=True,
+    )
+
+    print(f"Peak Memory Usage: {peak_memory:.3f} MiB")
+
+    return peak_memory
 
 
-#  -- -- -- -- --  SPARK -- -- -- -- --
-
-def benchmark_spark_time(spark_session: SparkSession, df_spark: pyspark.sql.DataFrame, run_query_func: Callable) -> list[float]:
+def benchmark_duckdb_time(table_location: str, query: str) -> list[float]:
     print(f"Repeats number: {N_REPEATS}")
 
-    # Clearing Cache and sql views to have similar conditions:
-    spark_session.catalog.dropTempView("db_table")
-    spark_session.catalog.clearCache()
-
-    # Core functionality:
-    df_spark.createOrReplaceTempView(name="db_table")
-
     times = timeit.repeat(
-        lambda: run_query_func(spark_session),
+        lambda: duckdb.sql(query % f"'{table_location}'").fetchall(),
         number=1,
-        repeat=N_REPEATS
+        repeat=N_REPEATS,
     )
 
     print(f"Execution times: {[round(t, 3) for t in times]}")
@@ -124,13 +127,46 @@ def benchmark_spark_time(spark_session: SparkSession, df_spark: pyspark.sql.Data
     return times
 
 
-def benchmark_spark_memory(spark_session: SparkSession, df_spark: pyspark.sql.DataFrame, run_query_func: Callable) -> Any:
+#  -- -- -- -- --  SPARK -- -- -- -- --
+
+
+def benchmark_spark_time(
+    spark_session: SparkSession,
+    df_spark: pyspark.sql.DataFrame,
+    run_query_func: Callable,
+) -> list[float]:
+    print(f"Repeats number: {N_REPEATS}")
+
     # Clearing Cache and sql views to have similar conditions:
-    spark_session.catalog.dropTempView("db_table")
+    spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
     spark_session.catalog.clearCache()
 
     # Core functionality:
-    df_spark.createOrReplaceTempView(name="db_table")
+    df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
+
+    times = timeit.repeat(
+        lambda: run_query_func(spark_session), number=1, repeat=N_REPEATS
+    )
+
+    print(f"Execution times: {[round(t, 3) for t in times]}")
+    print(f"First time: {times[0]:.3f}s")
+    print(f"Mean  time: {np.mean(times):.3f}s")
+    print(f"Best  time: {min(times):.3f}s")
+
+    return times
+
+
+def benchmark_spark_memory(
+    spark_session: SparkSession,
+    df_spark: pyspark.sql.DataFrame,
+    run_query_func: Callable,
+) -> Any:
+    # Clearing Cache and sql views to have similar conditions:
+    spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
+    spark_session.catalog.clearCache()
+
+    # Core functionality:
+    df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
 
     peak_memory = memory_usage((run_query_func, (spark_session,)), max_usage=True)
 
@@ -140,15 +176,23 @@ def benchmark_spark_memory(spark_session: SparkSession, df_spark: pyspark.sql.Da
 
 
 def run_spark_query_aggregation(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(sqlQuery=AGGREGATION_QUERY)
+    query: pyspark.sql.DataFrame = spark_session.sql(
+        sqlQuery=AGGREGATION_QUERY % DEFAULT_DATA_TABLE_NAME
+    )
     query.collect()
+
 
 def run_spark_query_windowfunc(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(sqlQuery=WINDOWFUNCTION_QUERY)
+    query: pyspark.sql.DataFrame = spark_session.sql(
+        sqlQuery=WINDOWFUNCTION_QUERY % DEFAULT_DATA_TABLE_NAME
+    )
     query.collect()
 
+
 def run_spark_query_join(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(sqlQuery=JOIN_QUERY)
+    query: pyspark.sql.DataFrame = spark_session.sql(
+        sqlQuery=JOIN_QUERY % DEFAULT_DATA_TABLE_NAME
+    )
     query.collect()
 
 
@@ -158,11 +202,14 @@ def run_spark_query_join(spark_session: pyspark.sql.SparkSession) -> None:
 def scalability_pandas():
     pass
 
+
 def scalability_polars():
     pass
 
+
 def scalability_duckdb():
     pass
+
 
 def scalability_spark():
     pass
