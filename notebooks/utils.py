@@ -99,30 +99,47 @@ def benchmark_polars():
 #  -- -- -- -- --  DUCKDB -- -- -- -- --
 
 
-def benchmark_duckdb_memory(table_location: str, query: str) -> list[float]:
+def benchmark_duckdb_memory(
+    table_location: str,
+    query: str,
+    db_connection: duckdb.DuckDBPyConnection | None = None,
+    verbose: bool = True,
+) -> list[float]:
+    if not db_connection:
+        db_connection = duckdb.connect(":memeory:")
+
     peak_memory = memory_usage(
-        (lambda: duckdb.sql(query % f"'{table_location}'").fetchall(), ()),
+        (lambda: db_connection.sql(query % f"'{table_location}'").fetchall(), ()),
         max_usage=True,
     )
-
-    print(f"Peak Memory Usage: {peak_memory:.3f} MiB")
+    if verbose:
+        print(f"Peak Memory Usage: {peak_memory:.3f} MiB")
 
     return peak_memory
 
 
-def benchmark_duckdb_time(table_location: str, query: str) -> list[float]:
-    print(f"Repeats number: {N_REPEATS}")
+def benchmark_duckdb_time(
+    table_location: str,
+    query: str,
+    db_connection: duckdb.DuckDBPyConnection | None = None,
+    verbose: bool = True,
+) -> list[float]:
+    if verbose:
+        print(f"Repeats number: {N_REPEATS}")
+
+    if not db_connection:
+        db_connection = duckdb.connect(":memory:")  # This lowers time and memory usage
 
     times = timeit.repeat(
-        lambda: duckdb.sql(query % f"'{table_location}'").fetchall(),
+        lambda: db_connection.sql(query % f"'{table_location}'").fetchall(),
         number=1,
         repeat=N_REPEATS,
     )
-
-    print(f"Execution times: {[round(t, 3) for t in times]}")
-    print(f"First time: {times[0]:.3f}s")
-    print(f"Mean  time: {np.mean(times):.3f}s")
-    print(f"Best  time: {min(times):.3f}s")
+    if verbose:
+        print(f"Execution times: {[round(t, 3) for t in times]}")
+        print(f"First time: {times[0]:.3f}s")
+        print(f"Mean  time: {np.mean(times):.3f}s")
+        print(f"Best  time: {min(times):.3f}s")
 
     return times
 
@@ -207,8 +224,18 @@ def scalability_polars():
     pass
 
 
-def scalability_duckdb():
-    pass
+def scalability_duckdb(
+    table_location, querry, max_number_of_threads: int = 10
+) -> dict[int, float]:
+    db_connection = duckdb.connect(":memeory:")
+    times_for_each_thread = {}
+    for n_threads in range(1, max_number_of_threads + 1):
+        db_connection.execute(f"PRAGMA threads={n_threads};")
+        times_for_each_thread[n_threads] = np.mean(
+            benchmark_duckdb_time(table_location, querry, db_connection, verbose=False)
+        )
+
+    return times_for_each_thread
 
 
 def scalability_spark():
