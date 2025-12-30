@@ -147,12 +147,36 @@ def benchmark_duckdb_time(
 #  -- -- -- -- --  SPARK -- -- -- -- --
 
 
+class SparkBenchmarkObject:
+    def __init__(self, session:SparkSession, df: pyspark.sql.DataFrame):
+        self.__spark_session: SparkSession = session
+        self.__spark_df: pyspark.sql.DataFrame = df
+
+    def session(self) -> SparkSession:
+        return self.__spark_session
+
+    def df(self) -> pyspark.sql.DataFrame:
+        return self.__spark_df
+
+    def get_items(self) -> tuple[SparkSession, pyspark.sql.DataFrame]:
+        return self.__spark_session,  self.__spark_df
+
+
+def run_spark_query(spark_session: pyspark.sql.SparkSession, query: str) -> None:
+    spark_query: pyspark.sql.DataFrame = spark_session.sql(
+        sqlQuery=query % DEFAULT_DATA_TABLE_NAME
+    )
+    spark_query.collect()
+
+
 def benchmark_spark_time(
-    spark_session: SparkSession,
-    df_spark: pyspark.sql.DataFrame,
-    run_query_func: Callable,
+    spark_benchmark_obj: SparkBenchmarkObject,
+    query: str,
+    verbose: bool = True,
 ) -> list[float]:
-    print(f"Repeats number: {N_REPEATS}")
+    if verbose:
+        print(f"Repeats number: {N_REPEATS}")
+    spark_session, df_spark = spark_benchmark_obj.get_items()
 
     # Clearing Cache and sql views to have similar conditions:
     spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
@@ -160,57 +184,38 @@ def benchmark_spark_time(
 
     # Core functionality:
     df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
-
     times = timeit.repeat(
-        lambda: run_query_func(spark_session), number=1, repeat=N_REPEATS
+        lambda: run_spark_query(spark_session, query), number=1, repeat=N_REPEATS
     )
 
-    print(f"Execution times: {[round(t, 3) for t in times]}")
-    print(f"First time: {times[0]:.3f}s")
-    print(f"Mean  time: {np.mean(times):.3f}s")
-    print(f"Best  time: {min(times):.3f}s")
+    if verbose:
+        print(f"Execution times: {[round(t, 3) for t in times]}")
+        print(f"First time: {times[0]:.3f}s")
+        print(f"Mean  time: {np.mean(times):.3f}s")
+        print(f"Best  time: {min(times):.3f}s")
 
     return times
 
 
 def benchmark_spark_memory(
-    spark_session: SparkSession,
-    df_spark: pyspark.sql.DataFrame,
-    run_query_func: Callable,
+    spark_benchmark_obj: SparkBenchmarkObject,
+    query: str,
+    verbose: bool = True,
 ) -> Any:
+    spark_session, df_spark = spark_benchmark_obj.get_items()
+
     # Clearing Cache and sql views to have similar conditions:
     spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
     spark_session.catalog.clearCache()
 
     # Core functionality:
     df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
+    peak_memory = memory_usage((run_spark_query, (spark_session, query,)), max_usage=True)
 
-    peak_memory = memory_usage((run_query_func, (spark_session,)), max_usage=True)
-
-    print(f"Peak Memory Usage: {peak_memory} MiB")
+    if verbose:
+        print(f"Peak Memory Usage: {peak_memory} MiB")
 
     return peak_memory
-
-
-def run_spark_query_aggregation(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(
-        sqlQuery=AGGREGATION_QUERY % DEFAULT_DATA_TABLE_NAME
-    )
-    query.collect()
-
-
-def run_spark_query_windowfunc(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(
-        sqlQuery=WINDOWFUNCTION_QUERY % DEFAULT_DATA_TABLE_NAME
-    )
-    query.collect()
-
-
-def run_spark_query_join(spark_session: pyspark.sql.SparkSession) -> None:
-    query: pyspark.sql.DataFrame = spark_session.sql(
-        sqlQuery=JOIN_QUERY % DEFAULT_DATA_TABLE_NAME
-    )
-    query.collect()
 
 
 ### Scalability
