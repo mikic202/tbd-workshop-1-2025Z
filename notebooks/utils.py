@@ -9,6 +9,7 @@ import timeit
 from memory_profiler import memory_usage
 from typing import Callable, Any
 
+import matplotlib.pyplot as plt
 
 # Part 3    ## Task 1
 
@@ -77,7 +78,7 @@ ON
 N_REPEATS = 5
 
 
-### Data tables
+#### Data tables
 
 DEFAULT_DATA_TABLE_NAME = "db_table"
 
@@ -148,7 +149,7 @@ def benchmark_duckdb_time(
 
 
 class SparkBenchmarkObject:
-    def __init__(self, session:SparkSession, df: pyspark.sql.DataFrame):
+    def __init__(self, session: SparkSession, df: pyspark.sql.DataFrame):
         self.__spark_session: SparkSession = session
         self.__spark_df: pyspark.sql.DataFrame = df
 
@@ -159,7 +160,7 @@ class SparkBenchmarkObject:
         return self.__spark_df
 
     def get_items(self) -> tuple[SparkSession, pyspark.sql.DataFrame]:
-        return self.__spark_session,  self.__spark_df
+        return self.__spark_session, self.__spark_df
 
 
 def run_spark_query(spark_session: pyspark.sql.SparkSession, query: str) -> None:
@@ -210,7 +211,16 @@ def benchmark_spark_memory(
 
     # Core functionality:
     df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
-    peak_memory = memory_usage((run_spark_query, (spark_session, query,)), max_usage=True)
+    peak_memory = memory_usage(
+        proc=(
+            run_spark_query,
+            (
+                spark_session,
+                query,
+            ),
+        ),
+        max_usage=True,
+    )
 
     if verbose:
         print(f"Peak Memory Usage: {peak_memory} MiB")
@@ -230,18 +240,56 @@ def scalability_polars():
 
 
 def scalability_duckdb(
-    table_location, querry, max_number_of_threads: int = 10
+    table_location, query, max_number_of_threads: int = 10
 ) -> dict[int, float]:
     db_connection = duckdb.connect(":memeory:")
     times_for_each_thread = {}
-    for n_threads in range(1, max_number_of_threads + 1):
+    threads_list = [1, 2, 4, 8, 16]
+    # for n_threads in range(1, max_number_of_threads + 1):
+    for n_threads in [t for t in threads_list if t <= max_number_of_threads]:
         db_connection.execute(f"PRAGMA threads={n_threads};")
         times_for_each_thread[n_threads] = np.mean(
-            benchmark_duckdb_time(table_location, querry, db_connection, verbose=False)
+            benchmark_duckdb_time(table_location, query, db_connection, verbose=False)
         )
 
     return times_for_each_thread
 
 
-def scalability_spark():
-    pass
+def scalability_spark(
+    table_location: str, query: str, max_number_of_threads: int = 10
+) -> dict[int, float]:
+    times_for_each_thread = {}
+
+    threads_list = [1, 2, 4, 8, 16]
+    for n_threads in [t for t in threads_list if t <= max_number_of_threads]:
+        spark = (
+            SparkSession.builder.appName(f"TBD_Spark_Scalability_test_{n_threads}")
+            .master(f"local[{n_threads}]")
+            .config("spark.driver.memory", "4g")
+            .config("spark.sql.shuffle.partitions", n_threads)
+            .getOrCreate()
+        )
+        df_spark = spark.read.parquet(table_location).repartition(n_threads)
+
+        spark_results = benchmark_spark_time(
+            spark_benchmark_obj=SparkBenchmarkObject(spark, df_spark),
+            query=query,
+            verbose=False,
+        )
+        times_for_each_thread[n_threads] = np.mean(spark_results)
+
+        spark.stop()
+
+    return times_for_each_thread
+
+
+def plot_scalability(times_per_core_query_dict: dict, title: str):
+    plt.figure(figsize=(12, 6))
+    plt.plot(
+        list(times_per_core_query_dict.keys()),
+        list(times_per_core_query_dict.values()),
+        marker="o",
+    )
+    plt.title(title)
+    plt.xlabel("Number of Cores")
+    plt.ylabel("Execution Time (seconds)")
