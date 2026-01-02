@@ -8,7 +8,6 @@ import numpy as np
 import timeit
 from memory_profiler import memory_usage
 from typing import Callable, Any
-
 import matplotlib.pyplot as plt
 
 # Part 3    ## Task 1
@@ -418,12 +417,13 @@ def benchmark_spark_memory(
 ### Scalability
 
 
-def scalability_pandas():
-    pass
+def scalability_polars(
+    df: pl.DataFrame, query: Callable[[pl.DataFrame], pl.DataFrame]
+) -> dict[int, float]:
 
+    print(f"[scalability_polars]: n_threads -- {pl.thread_pool_size()}")
 
-def scalability_polars():
-    pass
+    return np.mean(benchmark_polars_time(df, query, verbose=False))
 
 
 def scalability_duckdb(
