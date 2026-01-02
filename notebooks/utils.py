@@ -86,15 +86,174 @@ DEFAULT_DATA_TABLE_NAME = "db_table"
 #  -- -- -- -- --  PANDAS -- -- -- -- --
 
 
-def benchmark_pandas():
-    pass
+# --- Query A: AGGREGATION ---
+def query_aggregation_pandas(df: pd.DataFrame) -> pd.DataFrame:
+    return (
+        df.groupby("device")
+        .agg(
+            device_count=("device", "count"),
+            avg_latency=("latency", "mean"),
+            avg_error_rate=("error_rate", "mean"),
+        )
+        .reset_index()
+    )
+
+
+# --- Query B: WINDOW FUNCTION ---
+def query_window_pandas(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["post_date"] = pd.to_datetime(df["timestamp"]).dt.date
+
+    df["daily_like_rank"] = df.groupby(["category", "post_date"])["likes"].rank(
+        method="first", ascending=False
+    )
+
+    df = df.sort_values(["category", "timestamp"])
+    df["rolling_avg_views"] = (
+        df.groupby("category")["views"]
+        .rolling(100, min_periods=1)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
+    return df
+
+
+# --- Query C: JOIN previous post per user ---
+def query_join_pandas(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df = df.sort_values(["user_id", "timestamp"], ascending=[True, False])
+    df["userpost_history"] = df.groupby("user_id").cumcount() + 1
+
+    df_prev = df[["user_id", "post_id", "userpost_history"]].copy()
+    df_prev["userpost_history"] += 1
+    df_prev = df_prev.rename(columns={"post_id": "previous_post_id"})
+
+    result = df.merge(df_prev, on=["user_id", "userpost_history"], how="left")
+    return result[["user_id", "post_id", "previous_post_id"]]
+
+
+def benchmark_pandas_time(
+    df: pd.DataFrame,
+    query_fn: Callable[[pd.DataFrame], Any],
+    verbose: bool = True,
+) -> list[float]:
+
+    if verbose:
+        print(f"Repeats number: {N_REPEATS}")
+
+    times = timeit.repeat(
+        lambda: query_fn(df),
+        number=1,
+        repeat=N_REPEATS,
+    )
+
+    if verbose:
+        print(f"Execution times: {[round(t, 3) for t in times]}")
+        print(f"First time: {times[0]:.3f}s")
+        print(f"Mean  time: {np.mean(times):.3f}s")
+        print(f"Best  time: {min(times):.3f}s")
+
+    return times
+
+
+def benchmark_pandas_memory(df: pd.DataFrame, query_fn, verbose: bool = True) -> float:
+
+    peak_memory = memory_usage((lambda: query_fn(df), ()), max_usage=True)
+
+    if verbose:
+        print(f"Peak Memory Usage: {peak_memory:.3f} MiB")
+
+    return peak_memory
 
 
 #  -- -- -- -- --  POLARS -- -- -- -- --
 
 
-def benchmark_polars():
-    pass
+# --- Query A: AGGREGATION ---
+def query_aggregation_polars(df: pl.DataFrame) -> pl.DataFrame:
+    return df.group_by("device").agg(
+        [
+            pl.count("device").alias("device_count"),
+            pl.col("latency").mean().alias("avg_latency"),
+            pl.col("error_rate").mean().alias("avg_error_rate"),
+        ]
+    )
+
+
+# --- Query B: WINDOW FUNCTION ---
+def query_window_polars(df: pl.DataFrame) -> pl.DataFrame:
+    df = df.with_columns(
+        [pl.col("timestamp").cast(pl.Datetime).dt.date().alias("post_date")]
+    )
+
+    df = df.sort(["category", "post_date", "likes"], descending=[False, False, True])
+    df = df.with_columns(
+        [
+            pl.col("likes")
+            .rank(method="ordinal")
+            .over(["category", "post_date"])
+            .alias("daily_like_rank")
+        ]
+    )
+
+    df = df.sort(["category", "timestamp"])
+    df = df.with_columns(
+        [
+            pl.col("views")
+            .rolling_mean(window_size=100)
+            .over("category")
+            .alias("rolling_avg_views")
+        ]
+    )
+
+    return df
+
+
+# --- Query C: JOIN previous post per user ---
+def query_join_polars(df: pl.DataFrame) -> pl.DataFrame:
+    df = df.sort(["user_id", "timestamp"], descending=[False, True])
+
+    df = df.with_columns(
+        pl.int_range(1, pl.len() + 1).over("user_id").alias("userpost_history")
+    )
+
+    df_prev = (
+        df.select(["user_id", "post_id", "userpost_history"])
+        .with_columns((pl.col("userpost_history") + 1).alias("userpost_history"))
+        .rename({"post_id": "previous_post_id"})
+    )
+
+    result = df.join(df_prev, on=["user_id", "userpost_history"], how="left")
+
+    return result.select(["user_id", "post_id", "previous_post_id"])
+
+
+def benchmark_polars_time(
+    df: pl.DataFrame, query_fn, verbose: bool = True
+) -> list[float]:
+
+    if verbose:
+        print(f"Repeats number: {N_REPEATS}")
+
+    times = timeit.repeat(lambda: query_fn(df), number=1, repeat=N_REPEATS)
+
+    if verbose:
+        print(f"Execution times: {[round(t, 3) for t in times]}")
+        print(f"First time: {times[0]:.3f}s")
+        print(f"Mean  time: {np.mean(times):.3f}s")
+        print(f"Best  time: {min(times):.3f}s")
+
+    return times
+
+
+def benchmark_polars_memory(df: pl.DataFrame, query_fn, verbose: bool = True) -> float:
+
+    peak_memory = memory_usage((lambda: query_fn(df), ()), max_usage=True)
+
+    if verbose:
+        print(f"Peak Memory Usage: {peak_memory:.3f} MiB")
+
+    return peak_memory
 
 
 #  -- -- -- -- --  DUCKDB -- -- -- -- --
