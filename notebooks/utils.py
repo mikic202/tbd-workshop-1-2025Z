@@ -180,6 +180,34 @@ def query_aggregation_polars(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def query_aggregation_polars_lazy(df: pl.DataFrame) -> pl.DataFrame:
+    return (
+        df.group_by("device")
+        .agg(
+            [
+                pl.count("device").alias("device_count"),
+                pl.col("latency").mean().alias("avg_latency"),
+                pl.col("error_rate").mean().alias("avg_error_rate"),
+            ]
+        )
+        .collect()
+    )
+
+
+def query_aggregation_polars_lazy_streaming(df: pl.DataFrame) -> pl.DataFrame:
+    return (
+        df.group_by("device")
+        .agg(
+            [
+                pl.count("device").alias("device_count"),
+                pl.col("latency").mean().alias("avg_latency"),
+                pl.col("error_rate").mean().alias("avg_error_rate"),
+            ]
+        )
+        .collect(streaming=True)
+    )
+
+
 # --- Query B: WINDOW FUNCTION ---
 def query_window_polars(df: pl.DataFrame) -> pl.DataFrame:
     df = df.with_columns(
