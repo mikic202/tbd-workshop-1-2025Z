@@ -24,3 +24,9 @@ variable "image_version" {
   type    = string
   default = "2.2.69-ubuntu22"
 }
+
+variable "num_workers" {
+  type        = number
+  description = "max number of workers"
+  default     = 4
+}
