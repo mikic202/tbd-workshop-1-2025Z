@@ -8,7 +8,7 @@ output "data_service_account" {
   value       = google_service_account.tbd-composer-sa.email
 }
 
-output "gke_cluster" {
-  description = "Composer underlying GKE cluster"
-  value       = module.composer.gke_cluster
-}
+# output "gke_cluster" {
+#   description = "Composer underlying GKE cluster"
+#   value       = module.composer.gke_cluster
+# }
