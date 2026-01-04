@@ -6,13 +6,8 @@ from pyspark.sql import SparkSession
 import numpy as np
 import timeit
 
-# from memory_profiler import memory_usage
-from typing import Callable, Any
+import time
 
-
-# Part 3    ## Task 1
-
-### Queries:
 
 AGGREGATION_QUERY = """
 -- Select device types and its technical information averages
@@ -72,13 +67,7 @@ ON
 """
 
 
-### Benchmark:
-
-N_REPEATS = 1
-
-some_iterator = 0
-
-#### Data tables
+N_REPEATS = 10
 
 DEFAULT_DATA_TABLE_NAME = "db_table"
 
@@ -99,13 +88,10 @@ class SparkBenchmarkObject:
 
 
 def run_spark_query(spark_session: pyspark.sql.SparkSession, query: str) -> None:
-    global some_iterator
-    some_iterator += 1
-    print("Running Spark SQL query...", some_iterator)
     spark_query: pyspark.sql.DataFrame = spark_session.sql(
         sqlQuery=query % DEFAULT_DATA_TABLE_NAME
     )
-    spark_query.collect()
+    spark_query.write.format("noop").mode("overwrite").save()
 
 
 def benchmark_spark_time(
@@ -117,11 +103,9 @@ def benchmark_spark_time(
         print(f"Repeats number: {N_REPEATS}")
     spark_session, df_spark = spark_benchmark_obj.get_items()
 
-    # Clearing Cache and sql views to have similar conditions:
     spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
     spark_session.catalog.clearCache()
 
-    # Core functionality:
     df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
     times = timeit.repeat(
         lambda: run_spark_query(spark_session, query), number=1, repeat=N_REPEATS
@@ -136,59 +120,20 @@ def benchmark_spark_time(
     return times
 
 
-# def benchmark_spark_memory(
-#     spark_benchmark_obj: SparkBenchmarkObject,
-#     query: str,
-#     verbose: bool = True,
-# ) -> Any:
-#     spark_session, df_spark = spark_benchmark_obj.get_items()
-
-#     # Clearing Cache and sql views to have similar conditions:
-#     spark_session.catalog.dropTempView(DEFAULT_DATA_TABLE_NAME)
-#     spark_session.catalog.clearCache()
-
-#     # Core functionality:
-#     df_spark.createOrReplaceTempView(name=DEFAULT_DATA_TABLE_NAME)
-#     peak_memory = memory_usage(
-#         proc=(
-#             run_spark_query,
-#             (
-#                 spark_session,
-#                 query,
-#             ),
-#         ),
-#         max_usage=True,
-#     )
-
-#     if verbose:
-#         print(f"Peak Memory Usage: {peak_memory} MiB")
-
-#     return peak_memory
-
-
-### Scalability
-
-
-def scalability_pandas():
-    pass
-
-
-def scalability_polars():
-    pass
-
-
 def scalability_spark(
     table_location: str, query: str, max_number_of_threads: int = 10
 ) -> dict[int, float]:
     times_for_each_thread = {}
 
-    threads_list = [1, 2, 4, 8, 16]
+    threads_list = [1, 2, 3, 4]
     for n_threads in [t for t in threads_list if t <= max_number_of_threads]:
         spark = (
-            SparkSession.builder.appName(f"TBD_Spark_Scalability_test_{n_threads}")
-            .master(f"local[{n_threads}]")
-            .config("spark.driver.memory", "4g")
-            .config("spark.sql.shuffle.partitions", n_threads)
+            SparkSession.builder.appName(f"Cluster_Scalability_{n_threads}")
+            .config(
+                "spark.sql.shuffle.partitions", "200"
+            )  # Start with 200, adjust based on data size
+            .config("spark.executor.instances", n_threads)
+            .config("spark.dynamicAllocation.enabled", "false")
             .getOrCreate()
         )
         df_spark = spark.read.parquet(table_location).repartition(n_threads)
@@ -201,49 +146,37 @@ def scalability_spark(
         times_for_each_thread[n_threads] = np.mean(spark_results)
 
         spark.stop()
+        time.sleep(20)
 
     return times_for_each_thread
 
 
-n_workers = 4
-n_threads = 4
+# Main execution
 
-spark = (
-    SparkSession.builder.appName(f"Cluster_Scalability_{n_workers}")
-    # TUTAJ DEFINIUJESZ LICZBĘ EXECUTORÓW (WORKERÓW):
-    .config("spark.executor.instances", n_threads)
-    .config("spark.dynamicAllocation.enabled", "false")
-    .getOrCreate()
-)
+if __name__ == "__main__":
+    times_per_core_agregation = scalability_spark(
+        "gs://tbd-2025z-318407-state/data/social_media_data_partitioned.parquet",
+        AGGREGATION_QUERY,
+        max_number_of_threads=4,
+    )
+    print("Times per core for Spark for agregation query:")
+    for cores, t in times_per_core_agregation.items():
+        print(f"Cores: {cores:2}, Time: {t:.4f} seconds")
 
-df_spark = spark.read.parquet(
-    "gs://tbd-2025z-318407-state/data/social_media_data.parquet"
-)
+    times_per_core_window = scalability_spark(
+        "gs://tbd-2025z-318407-state/data/social_media_data_partitioned.parquet",
+        WINDOWFUNCTION_QUERY,
+        max_number_of_threads=4,
+    )
+    print("Times per core for Spark for window function query:")
+    for cores, t in times_per_core_window.items():
+        print(f"Cores: {cores:2}, Time: {t:.4f} seconds")
 
-spark_benchmark_obj = SparkBenchmarkObject(session=spark, df=df_spark)
-
-
-print(" --- Query 1: --- ")
-spark_tim_q1 = benchmark_spark_time(
-    spark_benchmark_obj=spark_benchmark_obj, query=AGGREGATION_QUERY
-)
-# spark_mem_q1 = benchmark_spark_memory(
-#     spark_benchmark_obj=spark_benchmark_obj, query=AGGREGATION_QUERY
-# )
-print("\n\n --- Query 2 --- ")
-spark_tim_q2 = benchmark_spark_time(
-    spark_benchmark_obj=spark_benchmark_obj, query=WINDOWFUNCTION_QUERY
-)
-# spark_mem_q2 = benchmark_spark_memory(
-#     spark_benchmark_obj=spark_benchmark_obj, query=WINDOWFUNCTION_QUERY
-# )
-
-print("\n\n --- Query 3 --- ")
-spark_tim_q3 = benchmark_spark_time(
-    spark_benchmark_obj=spark_benchmark_obj, query=JOIN_QUERY
-)
-# spark_mem_q3 = benchmark_spark_memory(
-#     spark_benchmark_obj=spark_benchmark_obj, query=JOIN_QUERY
-# )
-
-spark.stop()
+    times_per_core_join = scalability_spark(
+        "gs://tbd-2025z-318407-state/data/social_media_data_partitioned.parquet",
+        JOIN_QUERY,
+        max_number_of_threads=4,
+    )
+    print("Times per core for Spark for join query:")
+    for cores, t in times_per_core_join.items():
+        print(f"Cores: {cores:2}, Time: {t:.4f} seconds")
